@@ -189,3 +189,35 @@ exports.createPages = async ({ actions, graphql, reporter }) => {
 ```
 
 稍微与之前的流程不太一样的地方是，在这里，显示 events 列表的页面也在 createPages 中生成，而在原来的流程中，这个 events 列表的页面是通过 src/pages/events.js 约定式路由自动生成的。
+
+## Lesson 6 - Display and query data by id with context and static queries
+
+获取单个 event 的详情并显示。和以前的流程一样。通过在 src/template/event.js 中使用 graphql 查询 event 详情，将 event 详情作为 props 传递给 src/components/event.js 显示。
+
+```js
+// src/template/event.js
+import React from 'react'
+import { graphql } from 'gatsby'
+import Layout from '../components/layout'
+import Event from '../components/event'
+
+export const query = graphql`
+  query($eventID: String!) {
+    event(id: { eq: $eventID }) {
+      name
+      url
+      startDate(formatString: "MMMM DD YYYY")
+      endDate(formatString: "MMMM DD YYYY")
+      location
+      slug
+    }
+  }
+`
+const EventTemplate = ({ data: { event } }) => (
+  <Layout>
+    <Event {...event} />
+  </Layout>
+)
+
+export default EventTemplate
+```
