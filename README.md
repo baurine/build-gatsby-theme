@@ -63,3 +63,23 @@ query name 是文件的名字，指定 typeName 后是这样查询：
 ```
 
 运行 `yarn workspace gatsby-theme-events develop` 后打开 http://localhost:8001/___graphql 进行验证。
+
+## Lesson 3 - Create a data directory using the onPreBootstrap lifecycle
+
+当 gatsby-theme-events theme 发布时，很有可能并不会带上 data 目录，而是要求使用者在自己的项目中创建 data 目录并填充数据，如果使用者没有创建 data 目录，gatsby-source-filesystem 就会报错并终止。我们可以在 gatsby-node.js 中使用 onPreBootstrap lifecycle 方法来判断有没有 data 目录，如果没有就为用户创建此目录。
+
+创建 gatsby-node.js 文件并实现 onPreBootstrap 方法：
+
+```js
+const fs = require('fs')
+
+// Make sure the data directory exists
+exports.onPreBootstrap = ({ reporter }) => {
+  const contentPath = 'data'
+
+  if (!fs.existsSync(contentPath)) {
+    reporter.info(`creating the ${contentPath} directory`)
+    fs.mkdirSync(contentPath)
+  }
+}
+```
