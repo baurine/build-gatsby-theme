@@ -1,0 +1,142 @@
+# Build Gatsby Theme
+
+## References
+
+- [Building a Theme](https://www.gatsbyjs.org/tutorial/building-a-theme/)
+- [Gatsby Theme Authoring](https://egghead.io/courses/gatsby-theme-authoring)
+
+## Lesson 1 - Set up yarn workspaces
+
+创建 site 和 gatsby-theme-events 两个目录，即 workspace，分别有自己的 package.json，根目录下还有自己的 package.json。
+
+```shell
+$ yarn workspaces info
+$ yarn workspace site add gatsby react react-dom "gatsby-theme-events@*"
+$ yarn workspace gatsby-theme-events add -P react react-dom gatsby
+$ yarn workspace gatsby-theme-events add -D react react-dom gatsby
+$ yarn workspace site develop
+$ yarn workspace gatsby-theme-events develop
+$ yarn workspaces info
+```
+
+## Lesson 2 - Add static data to a theme
+
+在 gatsby-theme-events 下创建 data/events.yaml 文件。
+
+安装 gatsby-source-filesystem 及 gatsby-transformer-yaml 来解析 yaml 文件。
+
+```js
+module.exports = {
+  plugins: [
+    {
+      resolve: 'gatsby-source-filesystem',
+      options: {
+        path: 'data'
+      }
+    },
+    {
+      resolve: 'gatsby-transformer-yaml',
+      options: {
+        typeName: 'Event'
+      }
+    }
+  ]
+}
+```
+
+typeName 的作用，如果不指定 typeName，GraphQL 查询时是这样查的：
+
+```graphql
+{
+  allEventsYaml {
+    ...
+  }
+}
+```
+
+query name 是文件的名字，指定 typeName 后是这样查询：
+
+```graphql
+{
+  allEvent {
+    ...
+  }
+}
+```
+
+作用也不仅于此，在下面一小节在 sourceNodes 中也会用到这个 type。
+
+运行 `yarn workspace gatsby-theme-events develop` 后打开 http://localhost:8000/___graphql 进行验证。
+
+## Lesson 3 - Create a data directory using the onPreBootstrap lifecycle
+
+当 gatsby-theme-events theme 发布时，很有可能并不会带上 data 目录，而是要求使用者在自己的项目中创建 data 目录并填充数据，如果使用者没有创建 data 目录，gatsby-source-filesystem 就会报错并终止。我们可以在 gatsby-node.js 中使用 onPreBootstrap lifecycle 方法来判断有没有 data 目录，如果没有就为用户创建此目录。
+
+创建 gatsby-node.js 文件并实现 onPreBootstrap 方法：
+
+```js
+const fs = require('fs')
+
+// Make sure the data directory exists
+exports.onPreBootstrap = ({ reporter }) => {
+  const contentPath = 'data'
+
+  if (!fs.existsSync(contentPath)) {
+    reporter.info(`creating the ${contentPath} directory`)
+    fs.mkdirSync(contentPath)
+  }
+}
+```
+
+## Lesson 4 - Set up to create data-driven pages
+
+在 gatsby-node.js 中实现 sourceNodes 和 createResolvers 方法，添加 Event 类型的 node，并给这类 node 添加并实现 slug 属性。
+
+```js
+// gatsby-node.js
+...
+// Define the "Event" type
+exports.sourceNodes = ({ actions }) => {
+  actions.createTypes(`
+    type Event implements Node @dontInfer {
+      id: ID!
+      name: String!
+      location: String!
+      startDate: Date! @dateformat @proxy(from: "start_date")
+      endDate: Date! @dateformat @proxy(from: "end_date")
+      url: String!
+      slug: String!
+    }
+  `)
+}
+
+// Define resolvers for custom fields
+exports.createResolvers = ({ createResolvers }) => {
+  const basePath = "/"
+  // Quick-and-dirty helper to convert strings into URL-friendly slugs.
+  const slugify = str => {
+    const slug = str
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "")
+    return `/${basePath}/${slug}`.replace(/\/\/+/g, "/")
+  }
+  createResolvers({
+    Event: {
+      slug: {
+        resolve: source => slugify(source.name),
+      },
+    },
+  })
+}
+```
+
+这一小节不是很好理解的一点就是 yaml 和 Event 是怎么关联上的。应该就是依靠 lesson 2 中在 gatsby-transformer-yaml 中配置的 `typeName: "Event"` 关联的吧。
+
+做个实验，所 typeName 换个名字呢。把 typeName 改成 EventTest 后，在 GraphiQL 中会发现，allEventTest 和 allEvent 2 个字段同时存在，但后者的数据变成空了，前者的数据即为 yaml 文件中的数据。
+
+![](./gatsby-theme-1.png)
+
+所以我理解整个流程是这样的，首先 gatsby-transformer-yaml 插件工作，它也会使用 actions.createTyeps() 方法创建 Node，这个 Node 的类型由 config 中的 typeName 决定，如果没有在 config 中设置 typeName，则其类型由文件名决定。(但看了源码 - https://github.com/gatsbyjs/gatsby/blob/master/packages/gatsby-transformer-yaml/src/gatsby-node.js 后并非如此，源码中使用了 createNode API - https://www.gatsbyjs.org/docs/actions/#createNode 创建 Node，有待进一步深入学习。)
+
+然后就是项目自身的 gatsby-node.js 中的 sourceNodes 工作，使用 actions.createTypes() 可以定义相同类型的 Node。
