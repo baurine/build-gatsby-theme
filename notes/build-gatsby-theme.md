@@ -140,3 +140,52 @@ exports.createResolvers = ({ createResolvers }) => {
 所以我理解整个流程是这样的，首先 gatsby-transformer-yaml 插件工作，它也会使用 actions.createTyeps() 方法创建 Node，这个 Node 的类型由 config 中的 typeName 决定，如果没有在 config 中设置 typeName，则其类型由文件名决定。(但看了源码 - https://github.com/gatsbyjs/gatsby/blob/master/packages/gatsby-transformer-yaml/src/gatsby-node.js 后并非如此，源码中使用了 createNode API - https://www.gatsbyjs.org/docs/actions/#createNode 创建 Node，有待进一步深入学习。)
 
 然后就是项目自身的 gatsby-node.js 中的 sourceNodes 工作，使用 actions.createTypes() 可以定义相同类型的 Node。
+
+## Lesson 5 - Create data-driven pages using GraphQL and createPages
+
+(剩下的流程和以前手动一步一步创建 gatsby site 的步骤差不多)
+
+在 gatsby-node.js 中实现 createPages 方法，在这个方法中获取所有的 events，对每个 event 依次调用 createPage 方法，然后创建相应的 templates，layout，components ...
+
+- src/template/events.js - 获取所有 events，通过 components/event-list.js 显示 events 列表
+- src/template/event.js - 获取单个 event 详情，通过 components/event.js 显示单个 event
+- src/components/layout.js
+- src/components/event-list.js
+- src/components/event.js
+
+```js
+exports.createPages = async ({ actions, graphql, reporter }) => {
+  const basePath = '/'
+  actions.createPage({
+    path: basePath,
+    component: require.resolve('./src/templates/events.js')
+  })
+  const result = await graphql(`
+    query {
+      allEvent(sort: { fields: startDate, order: ASC }) {
+        nodes {
+          id
+          slug
+        }
+      }
+    }
+  `)
+  if (result.errors) {
+    reporter.panic('error loading events', result.errors)
+    return
+  }
+  const events = result.data.allEvent.nodes
+  events.forEach(event => {
+    const slug = event.slug
+    actions.createPage({
+      path: slug,
+      component: require.resolve('./src/templates/event.js'),
+      context: {
+        eventID: event.id
+      }
+    })
+  })
+}
+```
+
+稍微与之前的流程不太一样的地方是，在这里，显示 events 列表的页面也在 createPages 中生成，而在原来的流程中，这个 events 列表的页面是通过 src/pages/events.js 约定式路由自动生成的。
