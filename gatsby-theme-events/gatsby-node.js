@@ -1,8 +1,8 @@
 const fs = require('fs')
 
 // Make sure the data directory exists
-exports.onPreBootstrap = ({ reporter }) => {
-  const contentPath = 'data'
+exports.onPreBootstrap = ({ reporter }, options) => {
+  const contentPath = options.contentPath
   if (!fs.existsSync(contentPath)) {
     reporter.info(`creating the ${contentPath} directory`)
     fs.mkdirSync(contentPath)
@@ -25,8 +25,8 @@ exports.sourceNodes = ({ actions }) => {
 }
 
 // Define resolvers for custom fields
-exports.createResolvers = ({ createResolvers }) => {
-  const basePath = '/'
+exports.createResolvers = ({ createResolvers }, options) => {
+  const basePath = options.basePath
   // Quick-and-dirty helper to convert strings into URL-friendly slugs.
   const slugify = str => {
     const slug = str
@@ -44,8 +44,8 @@ exports.createResolvers = ({ createResolvers }) => {
   })
 }
 
-exports.createPages = async ({ actions, graphql, reporter }) => {
-  const basePath = '/'
+exports.createPages = async ({ actions, graphql, reporter }, options) => {
+  const basePath = options.basePath
   actions.createPage({
     path: basePath,
     component: require.resolve('./src/templates/events.js')

@@ -225,3 +225,84 @@ export default EventTemplate
 ## Lesson 7 - Style and format dates in React
 
 略。
+
+## Lesson 8 - Configure a theme to take options
+
+让 theme 支持接收 config options。
+
+修改 gatsby-theme-events/gatsby-config.js，将 hard code 的 path 变成从参数中接收。
+
+```js
+module.exports = ({ contentPath = 'data', basePath = '/' }) => ({
+  plugins: [
+    {
+      resolve: 'gatsby-source-filesystem',
+      options: {
+        path: contentPath
+      }
+    },
+    {
+      resolve: 'gatsby-transformer-yaml',
+      options: {
+        typeName: 'Event'
+      }
+    }
+  ]
+})
+```
+
+修改 gatsby-theme-events/gatsby-node.js，增加 options 参数。
+
+```js
+exports.onPreBootstrap = ({ reporter }, options) => {
+  const contentPath = options.contentPath || 'data'
+  // {...}
+}
+exports.sourceNodes = ({ actions }) => {
+  // {...}
+}
+exports.createResolvers = ({ createResolvers }, options) => {
+  const basePath = options.basePath || '/'
+  // {...}
+}
+exports.createPages = async ({ actions, graphql, reporter }, options) => {
+  const basePath = options.basePath || '/'
+  // {...}
+}
+```
+
+设置 site/gatsby-config.js，使用 gatsby-theme-events 的 options。
+
+```js
+module.exports = {
+  plugins: [
+    {
+      resolve: 'gatsby-theme-events',
+      options: {
+        contentPath: 'events',
+        basePath: '/events'
+      }
+    }
+  ]
+}
+```
+
+启动 `yarn workspace site develop` 后看效果，会发现在 site 目录下自动创建了 events 目录，这个目录用来存放 yaml 数据文件，把 gatsby-theme-events/data 下的 yaml 拷贝到 site/events 目录下，访问 localhost:8000/404 可以看到生成的所有路由，发现所有路由都加上了 `/events` 前缀。
+
+如下所示：
+
+- /events
+- /events/dinosaurjs
+- /events/react-rally
+- /events/the-lead-developer
+- /events/jsheroes
+
+而修改之前启动 `yarn workspace gatsby-theme-events develop` 后默认生成的路由是：
+
+- /
+- /dinosaurjs
+- /react-rally
+- /the-lead-developer
+- /jsheroes
+
+(经过上面的修改后由于 gatsby-theme-events 在 gatsby-config.js 导出的是一个函数而不是一个 object，因此无法再通过 `yarn workspace gatsby-theme-events develop` 单独启动了，只能作为一个 lib 使用)
