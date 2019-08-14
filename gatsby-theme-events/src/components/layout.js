@@ -1,10 +1,15 @@
-import React from 'react'
+import React from "react"
+import { Layout as ThemeLayout, Header, Main, Container } from "theme-ui"
 
-const Layout = ({ children }) => (
-  <div>
-    <h1>Gatsby Events Theme</h1>
-    {children}
-  </div>
-)
+const Layout = ({ children }) => {
+  return (
+    <ThemeLayout>
+      <Header>Gatsby Events Theme</Header>
+      <Main>
+        <Container>{children}</Container>
+      </Main>
+    </ThemeLayout>
+  )
+}
 
 export default Layout

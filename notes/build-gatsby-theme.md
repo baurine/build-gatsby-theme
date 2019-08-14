@@ -343,3 +343,38 @@ export default theme // 为什么还要导出一个 default?
 ```
 
 (目前这个 theme.js 还没起作用。)
+
+## Lesson 10 - Use and override a theme with component shadowing
+
+在 gatsby-theme-events/src 下新建 gatsby-plugin-theme-ui 目录，在此目录下新建 index.js，在 index.js 中使用上一步我们自定义的 theme.js 来覆写默认的 css style theme。
+
+```js
+import { theme } from '../theme'
+export default theme
+```
+
+(用这种方法来覆写默认 global css style ... 私以为还是 Typography.js 使用 API 来覆写更优雅一些。但上面这种方法在 react 中也挺常见，待举其它例子。而且也是 gatsby theme 实现 component 覆写的方法，后面会讲到。)
+
+使用 theme-ui 中的一些 component 来改造 layout.js。
+
+```js
+import React from 'react'
+import { Layout as ThemeLayout, Header, Main, Container } from 'theme-ui'
+
+const Layout = ({ children }) => {
+  return (
+    <ThemeLayout>
+      <Header>Gatsby Events Theme</Header>
+      <Main>
+        <Container>{children}</Container>
+      </Main>
+    </ThemeLayout>
+  )
+}
+
+export default Layout
+```
+
+用 theme-ui 中的 Styled component (Styled.h1, Styled.ul, Styled.li ...) 改造 event-list.js，代码略。
+
+运行 `yarn workspace site develop` 看效果。
