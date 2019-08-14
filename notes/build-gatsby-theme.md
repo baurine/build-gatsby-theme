@@ -306,3 +306,40 @@ module.exports = {
 - /jsheroes
 
 (经过上面的修改后由于 gatsby-theme-events 在 gatsby-config.js 导出的是一个函数而不是一个 object，因此无法再通过 `yarn workspace gatsby-theme-events develop` 单独启动了，只能作为一个 lib 使用)
+
+## Lesson 9 - Make themes extendable with gatsby-plugin-theme-ui
+
+使用 gatsby-plugin-theme-ui (对 theme-ui 的封装) lib 定义全局的 css style theme。(头大了，css 的方案太多了，之前的教程中使用的是 Typography.js，这又冒出一个新的 theme-ui ... 虽然对这个库不是很感冒，还是照着流程跑一遍吧)
+
+添加相应的依赖：
+
+```shell
+yarn workspace gatsby-theme-events add gatsby-plugin-theme-ui theme-ui @emotion/core @emotion/styled @mdx-js/react
+```
+
+在 gatsby-theme-events/gatsby-config.js 中声明使用这个 plugin:
+
+```js
+module.exports = ({ contentPath = "data", basePath = "/" }) => ({
+  plugins: [
+    "gatsby-plugin-theme-ui",
+    ...
+  ],
+})
+```
+
+在 gatsby-theme-events/src/theme.js 中定义全局的 css style theme:
+
+```js
+export const theme = {
+  space: [0, 4, 8, 16, 32],
+  fonts: {
+    body: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+  },
+  fontSizes: [16, 18, 20, 22, 27, 36],
+  ...
+}
+export default theme // 为什么还要导出一个 default?
+```
+
+(目前这个 theme.js 还没起作用。)
