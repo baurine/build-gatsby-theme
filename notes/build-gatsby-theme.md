@@ -221,3 +221,7 @@ const EventTemplate = ({ data: { event } }) => (
 
 export default EventTemplate
 ```
+
+## Lesson 7 - Style and format dates in React
+
+略。
