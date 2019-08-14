@@ -378,3 +378,95 @@ export default Layout
 用 theme-ui 中的 Styled component (Styled.h1, Styled.ul, Styled.li ...) 改造 event-list.js，代码略。
 
 运行 `yarn workspace site develop` 看效果。
+
+## Lesson 11 - Publish a theme to npm
+
+跳过。需要 publish 一个包到 npm 时再看。
+
+上面的 gatsby-theme-events 被发布成了 `@jlengstorf/gatsby-theme-events`。
+
+## Lesson 12 - Consume a theme in a Gatsby application
+
+在你的 gatsby 项目中使用 gatsby theme。
+
+一个最简单的 gatsby 项目只需要一个 gatsby-config.js 和一个 package.json 文件就行，在 gatsby-config.js 中声明使用的 gatsby theme，然后就可以用 `gatsby develop` 跑起来了。
+
+```shell
+$ mkdir theme-test
+$ cd theme-test
+$ yarn init -y
+$ yarn add react react-dom gatsby @jlengstorf/gatsby-theme-events
+```
+
+配置 theme-test/gatsby-config.js。
+
+```js
+module.exports = {
+  plugins: ['@jlengstorf/gatsby-theme-events']
+}
+```
+
+运行。
+
+```shell
+$ yarn gloabl add gatsby-cli
+$ gatsby develop
+```
+
+跑起来后根据前面的逻辑，在 theme-test 下会自动生成空的 data 目录，在此目录下你可以放置相应的 yaml 数据文件。
+
+## Lesson 13 - Use component shadowing to override theme components
+
+覆写 gatsby theme 中默认的 css style theme 和 component (比如 Layout, EventList, Event component 等)。
+
+方法就是在自己项目的 src 目录下，创建和 gatsby theme 中同名的目录及文件，就可以覆盖掉 gatsby theme 中的实现。
+
+比如覆写 gatsby-theme-events 中的 css style theme，那我们就在 theme-test 下创建 src/gatsby-plugin-theme-ui/index.js。
+
+覆写 gatsby-theme-events 中的 Layout component，那我们就在 theme-test 下创建 src/@jlengstorf/gatsby-theme-events/components/layout.js 并重新实现之。
+
+目录结构：
+
+```
+.
+├── data
+│   └── events.yml
+├── src
+│   ├── @jlengstorf
+│   │   └── gatsby-theme-events
+|   |       └── components
+|   |           └── layout.js
+│   └── gatsby-plugin-theme-ui
+│       └── index.js
+├── .gitignore
+├── gatsby-config.js
+├── package.json
+└── yarn.lock
+```
+
+```js
+// theme-test/src/gatsby-plugin-theme-ui/index.js
+import merge from 'lodash.merge' // 要 yarn add lodash.merge
+import { theme } from '@jlengstorf/gatsby-theme-events'
+
+export default merge({}, theme, {
+  colors: {
+    primary: 'blue'
+  }
+})
+```
+
+```js
+// theme-test/src/@jlengstorf/gatsby-theme-events/components/layout.js
+import React from 'react'
+
+export default ({ children }) => <>{children}</>
+```
+
+## Conclusion
+
+整个教程很详细，也很好理解，而且 gatsby theme 的实现也不复杂。
+
+有了这个 theme 以后，gatsby 就可以像 jekyll / hugo 等其它静态建站工具一样，开箱即用，再也不用像以前那样先要来上十几个麻烦的步骤后才能真正跑起来。
+
+awesome!
